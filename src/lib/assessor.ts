@@ -1,37 +1,31 @@
 import { ParcelDetail, SearchResult } from "@/types/parcel";
 
-// Cook County GIS Parcel Service
+// Cook County GIS Parcel Service (CookViewer3Parcels)
 const PARCELS_API =
-  "https://gis.cookcountyil.gov/traditional/rest/services/cookVoterParcels/MapServer/0/query";
+  "https://gis.cookcountyil.gov/traditional/rest/services/CookViewer3Parcels/MapServer/0/query";
 
 const OUT_FIELDS = [
   "PIN14",
-  "PIN",
-  "TAXPAYER_NAME",
-  "MAIL_ADDR",
-  "MAIL_CITY",
-  "MAIL_STATE",
-  "MAIL_ZIP",
-  "ADDR",
-  "CITY",
-  "ZIP",
-  "CLASS",
-  "AV_BLDG",
-  "AV_LAND",
-  "AV_TOTAL",
-  "SQ_FT",
-  "BLDG_SF",
-  "YEAR_BUILT",
+  "PIN14_dash",
+  "street_address",
+  "CITYNAME",
+  "ZIP1",
+  "CURRENTVALUE_TOTAL",
+  "CURRENTVALUE_LAND",
+  "CURRENTVALUE_BLDG",
+  "LANDSF",
+  "BLDGSQFT",
+  "BCLASS",
+  "class_description",
+  "major_class_description",
+  "township_name",
   "NBHD",
-  "TOWNSHIP_NAME",
-  "SALE_DATE",
-  "SALE_PRICE",
-  "TAX_YEAR",
+  "TAXYR",
+  "BLDGAGE",
 ].join(",");
 
 export async function fetchParcelByPIN(pin: string): Promise<ParcelDetail | null> {
   const cleanPIN = pin.replace(/[^0-9-]/g, "");
-  // PIN14 is the 14-digit version without dashes
   const pin14 = cleanPIN.replace(/-/g, "");
 
   const where = `PIN14='${pin14}'`;
@@ -60,14 +54,25 @@ export async function fetchParcelByLocation(
   lng: number,
   lat: number
 ): Promise<ParcelDetail | null> {
+  // Use envelope geometry (small bbox around the point) — works reliably with this service
+  const buffer = 0.0001; // ~10m
+  const geometry = JSON.stringify({
+    xmin: lng - buffer,
+    ymin: lat - buffer,
+    xmax: lng + buffer,
+    ymax: lat + buffer,
+    spatialReference: { wkid: 4326 },
+  });
+
   const params = new URLSearchParams({
-    geometry: JSON.stringify({ x: lng, y: lat, spatialReference: { wkid: 4326 } }),
-    geometryType: "esriGeometryPoint",
+    geometry,
+    geometryType: "esriGeometryEnvelope",
     spatialRel: "esriSpatialRelIntersects",
     outFields: OUT_FIELDS,
     f: "json",
     returnGeometry: "true",
     outSR: "4326",
+    resultRecordCount: "1",
   });
 
   const res = await fetch(`${PARCELS_API}?${params}`, {
@@ -85,17 +90,16 @@ export async function fetchParcelByLocation(
 export async function searchParcels(query: string): Promise<SearchResult[]> {
   const clean = query.replace(/'/g, "''").trim().toUpperCase();
 
-  // Build WHERE clause: try PIN, address, owner
+  // Build WHERE clause: try PIN, address
   const conditions = [
-    `ADDR LIKE '%${clean}%'`,
-    `TAXPAYER_NAME LIKE '%${clean}%'`,
+    `street_address LIKE '%${clean}%'`,
     `PIN14 LIKE '%${clean.replace(/-/g, "")}%'`,
   ];
   const where = conditions.join(" OR ");
 
   const params = new URLSearchParams({
     where,
-    outFields: "PIN14,ADDR,CITY,TAXPAYER_NAME",
+    outFields: "PIN14,PIN14_dash,street_address,CITYNAME",
     f: "json",
     returnGeometry: "false",
     resultRecordCount: "15",
@@ -109,19 +113,18 @@ export async function searchParcels(query: string): Promise<SearchResult[]> {
 
   return data.features.map(
     (f: { attributes: Record<string, string | null> }) => ({
-      pin: formatPIN(f.attributes.PIN14 || ""),
-      address: [f.attributes.ADDR, f.attributes.CITY]
+      pin: f.attributes.PIN14_dash || formatPIN(f.attributes.PIN14 || ""),
+      address: [f.attributes.street_address, f.attributes.CITYNAME]
         .filter(Boolean)
         .join(", ")
         .trim(),
-      owner: f.attributes.TAXPAYER_NAME || "",
+      owner: "",
     })
   );
 }
 
 function formatPIN(pin14: string): string {
   if (pin14.length !== 14) return pin14;
-  // Format as XX-XX-XXX-XXX-XXXX
   return `${pin14.slice(0, 2)}-${pin14.slice(2, 4)}-${pin14.slice(4, 7)}-${pin14.slice(7, 10)}-${pin14.slice(10, 14)}`;
 }
 
@@ -134,41 +137,35 @@ function parseFormattedNumber(val: unknown): number | null {
 }
 
 function mapAttributes(attrs: Record<string, unknown>, geometry?: { rings?: number[][][] }): ParcelDetail {
-  const avTotal = parseFormattedNumber(attrs.AV_TOTAL);
-  // Cook County market value is roughly 10x assessed value (10% assessment ratio)
-  const marketValue = avTotal ? avTotal * 10 : null;
+  const assessedTotal = parseFormattedNumber(attrs.CURRENTVALUE_TOTAL);
+  // Cook County assessment ratio is ~10% for most residential
+  const marketValue = assessedTotal ? assessedTotal * 10 : null;
+
+  // Compute year built from building age
+  const bldgAge = parseFormattedNumber(attrs.BLDGAGE);
+  const yearBuilt = bldgAge ? new Date().getFullYear() - bldgAge : null;
 
   return {
-    pin: formatPIN((attrs.PIN14 as string) || (attrs.PIN as string) || ""),
-    owner: (attrs.TAXPAYER_NAME as string) || "",
-    mailingAddress: [attrs.MAIL_ADDR, attrs.MAIL_CITY, attrs.MAIL_STATE, attrs.MAIL_ZIP]
-      .filter(Boolean)
-      .join(", "),
-    situsAddress: ((attrs.ADDR as string) || "").trim(),
-    city: (attrs.CITY as string) || "",
-    zip: (attrs.ZIP as string) || "",
+    pin: (attrs.PIN14_dash as string) || formatPIN((attrs.PIN14 as string) || ""),
+    owner: "",
+    mailingAddress: "",
+    situsAddress: ((attrs.street_address as string) || "").trim(),
+    city: (attrs.CITYNAME as string) || "",
+    zip: (attrs.ZIP1 as string) || "",
     zoning: "",
-    assessedValue: avTotal,
+    assessedValue: assessedTotal,
     marketValue,
-    lotSize: parseFormattedNumber(attrs.SQ_FT),
-    buildingSqFt: parseFormattedNumber(attrs.BLDG_SF),
-    yearBuilt: attrs.YEAR_BUILT ? parseInt(String(attrs.YEAR_BUILT), 10) || null : null,
-    propertyClass: (attrs.CLASS as string) || "",
-    neighborhood: (attrs.NBHD as string) || "",
-    township: (attrs.TOWNSHIP_NAME as string) || "",
-    saleDate: attrs.SALE_DATE ? formatDate(attrs.SALE_DATE as number) : "",
-    salePrice: parseFormattedNumber(attrs.SALE_PRICE),
-    taxYear: attrs.TAX_YEAR ? parseInt(String(attrs.TAX_YEAR), 10) || null : null,
+    lotSize: parseFormattedNumber(attrs.LANDSF),
+    buildingSqFt: parseFormattedNumber(attrs.BLDGSQFT),
+    yearBuilt,
+    propertyClass: [attrs.BCLASS, attrs.class_description || attrs.major_class_description]
+      .filter(Boolean)
+      .join(" - "),
+    neighborhood: attrs.NBHD ? String(attrs.NBHD) : "",
+    township: (attrs.township_name as string) || "",
+    saleDate: "",
+    salePrice: null,
+    taxYear: attrs.TAXYR ? parseInt(String(attrs.TAXYR), 10) || null : null,
     geometry: geometry?.rings ?? null,
   };
-}
-
-function formatDate(timestamp: number): string {
-  if (!timestamp) return "";
-  const d = new Date(timestamp);
-  return d.toLocaleDateString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
-  });
 }

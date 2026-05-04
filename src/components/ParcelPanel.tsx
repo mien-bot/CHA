@@ -82,37 +82,36 @@ export default function ParcelPanel({ parcel, loading, error, onClose }: ParcelP
 
         {parcel && !loading && (
           <div className="divide-y divide-zinc-100">
-            <Section title="Owner">
-              <Field label="Name" value={parcel.owner} />
-              <Field label="Mailing Address" value={parcel.mailingAddress} />
-            </Section>
-
             <Section title="Classification">
-              <Field
-                label="Zoning"
-                value={parcel.zoning ? `${parcel.zoning} (${getZoningCategory(parcel.zoning)})` : "--"}
-              />
               <Field label="Property Class" value={parcel.propertyClass} />
               <Field label="Township" value={parcel.township} />
               <Field label="Neighborhood" value={parcel.neighborhood} />
+              {parcel.zoning && (
+                <Field
+                  label="Zoning"
+                  value={`${parcel.zoning} (${getZoningCategory(parcel.zoning)})`}
+                />
+              )}
             </Section>
 
             <Section title="Valuation">
               <Field label="Assessed Value" value={formatCurrency(parcel.assessedValue)} />
-              <Field label="Market Value (est.)" value={formatCurrency(parcel.marketValue)} />
+              <Field label="Est. Market Value" value={formatCurrency(parcel.marketValue)} />
               {parcel.taxYear && <Field label="Tax Year" value={String(parcel.taxYear)} />}
             </Section>
 
             <Section title="Property">
               <Field label="Lot Size" value={parcel.lotSize ? `${formatNumber(parcel.lotSize)} sqft` : "--"} />
               <Field label="Building Size" value={parcel.buildingSqFt ? `${formatNumber(parcel.buildingSqFt)} sqft` : "--"} />
-              <Field label="Year Built" value={parcel.yearBuilt ? String(parcel.yearBuilt) : "--"} />
+              <Field label="Year Built" value={parcel.yearBuilt ? `~${parcel.yearBuilt}` : "--"} />
             </Section>
 
-            <Section title="Last Sale">
-              <Field label="Date" value={parcel.saleDate || "--"} />
-              <Field label="Price" value={formatCurrency(parcel.salePrice)} />
-            </Section>
+            {(parcel.saleDate || parcel.salePrice) && (
+              <Section title="Last Sale">
+                <Field label="Date" value={parcel.saleDate || "--"} />
+                <Field label="Price" value={formatCurrency(parcel.salePrice)} />
+              </Section>
+            )}
           </div>
         )}
       </div>

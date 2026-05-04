@@ -218,7 +218,7 @@ export default function MapView() {
         type: "raster",
         tiles: [ZONING_EXPORT_URL],
         tileSize: 256,
-        attribution: '<a href="https://www.chicago.gov">City of Chicago</a>',
+        attribution: '<a href="https://gisapps.chicago.gov">City of Chicago GIS</a>',
       });
 
       map.addLayer({

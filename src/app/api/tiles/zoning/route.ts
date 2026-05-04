@@ -8,9 +8,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing bbox" }, { status: 400 });
   }
 
-  // City of Chicago Zoning MapServer
+  // City of Chicago Zoning MapServer (on gisapps.chicago.gov)
   const url =
-    `https://gis.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/export?` +
+    `https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/export?` +
     `dpi=96&transparent=true&format=png32&` +
     `bbox=${bbox}&bboxSR=3857&imageSR=3857&size=256,256&f=image`;
 
