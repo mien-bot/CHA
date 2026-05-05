@@ -268,7 +268,7 @@ export default function MapView() {
         id: "zoning-fill",
         type: "raster",
         source: "zoning",
-        minzoom: 13,
+        minzoom: 10,
         layout: { visibility: "none" },
         paint: { "raster-opacity": 0.55 },
       });
