@@ -87,11 +87,22 @@ export default function MapView() {
       const data: ParcelDetail = await res.json();
       setSelectedParcel(data);
       setPanelLoading(false);
-      // If we have geometry, use its centroid for overlays
+      // If we have geometry, fly to the parcel and drop a pin
       if (data.geometry?.[0]?.length) {
         const ring = data.geometry[0];
         const lng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
         const lat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+
+        // Drop pin at parcel centroid
+        if (markerRef.current) markerRef.current.remove();
+        const map = mapRef.current;
+        if (map) {
+          markerRef.current = new maplibregl.Marker({ color: "#ef4444" })
+            .setLngLat([lng, lat])
+            .addTo(map);
+          map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 16), duration: 1500 });
+        }
+
         fetchOverlays(lng, lat);
       }
     } catch (err) {
