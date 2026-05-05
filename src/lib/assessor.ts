@@ -12,6 +12,26 @@ const ZONING_API =
 const WARD_API =
   "https://gisapps.chicago.gov/arcgis/rest/services/311/311_layers/MapServer/21/query";
 
+// Community Area (311 layer 5)
+const COMAREA_API =
+  "https://gisapps.chicago.gov/arcgis/rest/services/311/311_layers/MapServer/5/query";
+
+// Planning Region (Zoning layer 21)
+const PLANNING_REGION_API =
+  "https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/21/query";
+
+// ARO - Affordable Requirements (Zoning layer 20)
+const ARO_API =
+  "https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/20/query";
+
+// Zoning Map Index (Zoning layer 22)
+const ZONING_MAP_INDEX_API =
+  "https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/22/query";
+
+// TIF Districts (dpd layer 13)
+const TIF_API =
+  "https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/dpd/MapServer/13/query";
+
 const OUT_FIELDS = [
   "PIN14",
   "PIN14_dash",
@@ -48,6 +68,111 @@ async function fetchZoningAtPoint(lng: number, lat: number) {
     const data = await res.json();
     if (!data.features?.length) return null;
     return data.features[0].attributes as { ZONE_CLASS: string; ZONE_TYPE: number };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchCommunityAreaAtPoint(lng: number, lat: number) {
+  try {
+    const params = new URLSearchParams({
+      geometry: `${lng},${lat}`,
+      geometryType: "esriGeometryPoint",
+      inSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      outFields: "COMMUNITY,AREA_NUMBER",
+      f: "json",
+      returnGeometry: "false",
+    });
+    const res = await fetch(`${COMAREA_API}?${params}`, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.features?.length) return null;
+    return data.features[0].attributes as { COMMUNITY: string; AREA_NUMBER: string };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchPlanningRegionAtPoint(lng: number, lat: number) {
+  try {
+    const params = new URLSearchParams({
+      geometry: `${lng},${lat}`,
+      geometryType: "esriGeometryPoint",
+      inSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      outFields: "REGION_NAME",
+      f: "json",
+      returnGeometry: "false",
+    });
+    const res = await fetch(`${PLANNING_REGION_API}?${params}`, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.features?.length) return null;
+    return data.features[0].attributes as { REGION_NAME: string };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchAROAtPoint(lng: number, lat: number) {
+  try {
+    const params = new URLSearchParams({
+      geometry: `${lng},${lat}`,
+      geometryType: "esriGeometryPoint",
+      inSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      outFields: "STATUS",
+      f: "json",
+      returnGeometry: "false",
+    });
+    const res = await fetch(`${ARO_API}?${params}`, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.features?.length) return null;
+    return data.features[0].attributes as { STATUS: string };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchZoningMapIndexAtPoint(lng: number, lat: number) {
+  try {
+    const params = new URLSearchParams({
+      geometry: `${lng},${lat}`,
+      geometryType: "esriGeometryPoint",
+      inSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      outFields: "ZONE_MAP,PAGE_NUMBER",
+      f: "json",
+      returnGeometry: "false",
+    });
+    const res = await fetch(`${ZONING_MAP_INDEX_API}?${params}`, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.features?.length) return null;
+    return data.features[0].attributes as { ZONE_MAP: string; PAGE_NUMBER: string };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchTIFAtPoint(lng: number, lat: number) {
+  try {
+    const params = new URLSearchParams({
+      geometry: `${lng},${lat}`,
+      geometryType: "esriGeometryPoint",
+      inSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      outFields: "NAME,REF,EXPIRATION_DATE,TYPE",
+      f: "json",
+      returnGeometry: "false",
+    });
+    const res = await fetch(`${TIF_API}?${params}`, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.features?.length) return null;
+    return data.features[0].attributes as { NAME: string; REF: string; EXPIRATION_DATE: string; TYPE: string };
   } catch {
     return null;
   }
@@ -99,20 +224,31 @@ export async function fetchParcelByPIN(pin: string): Promise<ParcelDetail | null
 
   const parcel = mapAttributes(data.features[0].attributes, data.features[0].geometry);
 
-  // Get centroid for zoning/ward lookup
+  // Get centroid for zoning/ward/area lookup
   const centroid = getCentroid(data.features[0].geometry?.rings);
   if (centroid) {
-    const [zoning, ward] = await Promise.all([
+    const [zoning, ward, comArea, planRegion, aro, mapIndex, tif] = await Promise.all([
       fetchZoningAtPoint(centroid[0], centroid[1]),
       fetchWardAtPoint(centroid[0], centroid[1]),
+      fetchCommunityAreaAtPoint(centroid[0], centroid[1]),
+      fetchPlanningRegionAtPoint(centroid[0], centroid[1]),
+      fetchAROAtPoint(centroid[0], centroid[1]),
+      fetchZoningMapIndexAtPoint(centroid[0], centroid[1]),
+      fetchTIFAtPoint(centroid[0], centroid[1]),
     ]);
-    if (zoning) {
-      parcel.zoning = zoning.ZONE_CLASS || "";
-    }
+    if (zoning) parcel.zoning = zoning.ZONE_CLASS || "";
     if (ward) {
       parcel.ward = ward.WARD || "";
       parcel.alderman = ward.ALDERMAN || "";
       parcel.wardPhone = ward.WARD_PHONE || "";
+    }
+    if (comArea) parcel.communityArea = comArea.COMMUNITY || "";
+    if (planRegion) parcel.planningRegion = planRegion.REGION_NAME || "";
+    if (aro) parcel.aro = aro.STATUS || "";
+    if (mapIndex) parcel.zoningMapIndex = `${mapIndex.ZONE_MAP || ""} (Page ${mapIndex.PAGE_NUMBER || ""})`;
+    if (tif) {
+      parcel.tifDistrict = `${tif.NAME || ""} (${tif.REF || ""})`;
+      parcel.tifExpiration = tif.EXPIRATION_DATE || "";
     }
   }
 
@@ -143,11 +279,16 @@ export async function fetchParcelByLocation(
     resultRecordCount: "1",
   });
 
-  // Fetch parcel, zoning, and ward in parallel
-  const [parcelRes, zoning, ward] = await Promise.all([
+  // Fetch parcel + all overlay data in parallel
+  const [parcelRes, zoning, ward, comArea, planRegion, aro, mapIndex, tif] = await Promise.all([
     fetch(`${PARCELS_API}?${params}`, { next: { revalidate: 86400 } }),
     fetchZoningAtPoint(lng, lat),
     fetchWardAtPoint(lng, lat),
+    fetchCommunityAreaAtPoint(lng, lat),
+    fetchPlanningRegionAtPoint(lng, lat),
+    fetchAROAtPoint(lng, lat),
+    fetchZoningMapIndexAtPoint(lng, lat),
+    fetchTIFAtPoint(lng, lat),
   ]);
 
   if (!parcelRes.ok) return null;
@@ -157,13 +298,19 @@ export async function fetchParcelByLocation(
 
   const parcel = mapAttributes(data.features[0].attributes, data.features[0].geometry);
 
-  if (zoning) {
-    parcel.zoning = zoning.ZONE_CLASS || "";
-  }
+  if (zoning) parcel.zoning = zoning.ZONE_CLASS || "";
   if (ward) {
     parcel.ward = ward.WARD || "";
     parcel.alderman = ward.ALDERMAN || "";
     parcel.wardPhone = ward.WARD_PHONE || "";
+  }
+  if (comArea) parcel.communityArea = comArea.COMMUNITY || "";
+  if (planRegion) parcel.planningRegion = planRegion.REGION_NAME || "";
+  if (aro) parcel.aro = aro.STATUS || "";
+  if (mapIndex) parcel.zoningMapIndex = `${mapIndex.ZONE_MAP || ""} (Page ${mapIndex.PAGE_NUMBER || ""})`;
+  if (tif) {
+    parcel.tifDistrict = `${tif.NAME || ""} (${tif.REF || ""})`;
+    parcel.tifExpiration = tif.EXPIRATION_DATE || "";
   }
 
   return parcel;
@@ -261,5 +408,11 @@ function mapAttributes(attrs: Record<string, unknown>, geometry?: { rings?: numb
     salePrice: null,
     taxYear: attrs.TAXYR ? parseInt(String(attrs.TAXYR), 10) || null : null,
     geometry: geometry?.rings ?? null,
+    communityArea: "",
+    planningRegion: "",
+    aro: "",
+    zoningMapIndex: "",
+    tifDistrict: "",
+    tifExpiration: "",
   };
 }

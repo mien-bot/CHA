@@ -90,6 +90,13 @@ export default function ParcelPanel({ parcel, loading, error, onClose }: ParcelP
                 />
               )}
               <Field label="Property Class" value={parcel.propertyClass} />
+              {parcel.zoningMapIndex && <Field label="Map Index" value={parcel.zoningMapIndex} />}
+              {parcel.aro && <Field label="ARO" value={parcel.aro} />}
+            </Section>
+
+            <Section title="Location">
+              {parcel.communityArea && <Field label="Community Area" value={parcel.communityArea} />}
+              {parcel.planningRegion && <Field label="Planning Region" value={parcel.planningRegion} />}
               <Field label="Township" value={parcel.township} />
               <Field label="Neighborhood" value={parcel.neighborhood} />
             </Section>
@@ -99,6 +106,13 @@ export default function ParcelPanel({ parcel, loading, error, onClose }: ParcelP
                 <Field label="Ward" value={parcel.ward} />
                 <Field label="Alderman" value={parcel.alderman} />
                 {parcel.wardPhone && <Field label="Phone" value={parcel.wardPhone} />}
+              </Section>
+            )}
+
+            {parcel.tifDistrict && (
+              <Section title="TIF District">
+                <Field label="Name" value={parcel.tifDistrict} />
+                {parcel.tifExpiration && <Field label="Expiration" value={parcel.tifExpiration} />}
               </Section>
             )}
 

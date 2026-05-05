@@ -6,6 +6,7 @@ import { ParcelDetail } from "@/types/parcel";
 import ParcelPanel from "./ParcelPanel";
 import SearchBar from "./SearchBar";
 import LayerToggle from "./LayerToggle";
+import MeasureTool from "./MeasureTool";
 
 const CHICAGO_CENTER: [number, number] = [-87.6298, 41.8781];
 const INITIAL_ZOOM = 11;
@@ -439,8 +440,18 @@ export default function MapView() {
       {/* Zoom hint */}
       <ZoomHint mapRef={mapRef} />
 
+      {/* HYLO logo */}
+      <div className="absolute top-3 right-3 z-10 pointer-events-none">
+        <img
+          src="/hylo-logo.png"
+          alt="HYLO"
+          className="h-8 sm:h-10 opacity-80"
+        />
+      </div>
+
       {/* Bottom controls */}
-      <div className="absolute bottom-16 left-3 z-10">
+      <div className="absolute bottom-16 left-3 z-10 flex flex-col gap-2">
+        <MeasureTool mapRef={mapRef} />
         <LayerToggle layers={layerState} onToggle={handleLayerToggle} />
       </div>
 

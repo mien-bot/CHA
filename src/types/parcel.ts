@@ -22,6 +22,13 @@ export interface ParcelDetail {
   salePrice: number | null;
   taxYear: number | null;
   geometry?: number[][][] | null;
+  // Additional Chicago-specific fields
+  communityArea: string;
+  planningRegion: string;
+  aro: string;
+  zoningMapIndex: string;
+  tifDistrict: string;
+  tifExpiration: string;
 }
 
 export interface SearchResult {
