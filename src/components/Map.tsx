@@ -13,7 +13,7 @@ const INITIAL_ZOOM = 11;
 
 // Proxied through our API routes to avoid CORS issues
 const PARCEL_TILES_URL = "/api/tiles/parcels/{z}/{y}/{x}";
-const ZONING_EXPORT_URL = "/api/tiles/zoning?v=2&bbox={bbox-epsg-3857}";
+const ZONING_EXPORT_URL = "/api/tiles/zoning?v=3&bbox={bbox-epsg-3857}";
 const WARDS_EXPORT_URL = "/api/tiles/wards?bbox={bbox-epsg-3857}";
 
 export default function MapView() {
@@ -220,7 +220,7 @@ export default function MapView() {
       map.addSource("zoning", {
         type: "raster",
         tiles: [ZONING_EXPORT_URL],
-        tileSize: 256,
+        tileSize: 512,
         attribution: '<a href="https://gisapps.chicago.gov">City of Chicago GIS</a>',
       });
 
@@ -228,7 +228,7 @@ export default function MapView() {
         id: "zoning-fill",
         type: "raster",
         source: "zoning",
-        minzoom: 12,
+        minzoom: 13,
         layout: { visibility: "none" },
         paint: { "raster-opacity": 0.55 },
       });
