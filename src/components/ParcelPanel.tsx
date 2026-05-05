@@ -82,24 +82,66 @@ export default function ParcelPanel({ parcel, loading, error, onClose }: ParcelP
 
         {parcel && !loading && (
           <div className="divide-y divide-zinc-100">
-            <Section title="Zoning & Classification">
-              {parcel.zoning && (
+            <Section title="Zoning Districts">
+              {parcel.zoning ? (
                 <Field
                   label="Zoning"
                   value={`${parcel.zoning} (${getZoningCategory(parcel.zoning)})`}
                 />
+              ) : (
+                <div className="text-xs text-zinc-400 italic">Loading...</div>
               )}
               <Field label="Property Class" value={parcel.propertyClass} />
-              {parcel.zoningMapIndex && <Field label="Map Index" value={parcel.zoningMapIndex} />}
-              {parcel.aro && <Field label="ARO" value={parcel.aro} />}
             </Section>
 
-            <Section title="Location">
-              {parcel.communityArea && <Field label="Community Area" value={parcel.communityArea} />}
-              {parcel.planningRegion && <Field label="Planning Region" value={parcel.planningRegion} />}
-              <Field label="Township" value={parcel.township} />
-              <Field label="Neighborhood" value={parcel.neighborhood} />
+            {parcel.planningRegion && (
+              <Section title="Planning Region">
+                <Field label="Region" value={parcel.planningRegion} />
+              </Section>
+            )}
+
+            {parcel.aro && (
+              <Section title="Affordable Requirements (ARO)">
+                <Field label="Status" value={parcel.aro} />
+              </Section>
+            )}
+
+            {parcel.zoningMapIndex && (
+              <Section title="Zoning Map Index">
+                <Field label="Index" value={parcel.zoningMapIndex} />
+                {parcel.waterRecordBooks && <Field label="Water Record Books" value={parcel.waterRecordBooks} />}
+              </Section>
+            )}
+
+            <Section title="Building Address">
+              <Field label="Address" value={parcel.situsAddress || "--"} />
             </Section>
+
+            {parcel.eightyAcrePage && (
+              <Section title="80 Acre Page">
+                <Field label="Page" value={parcel.eightyAcrePage} />
+              </Section>
+            )}
+
+            <Section title="Parcels">
+              <Field label="PIN" value={parcel.pin} />
+              <Field label="Parcel Address" value={parcel.situsAddress || "--"} />
+            </Section>
+
+            {parcel.tslBusRoutes && parcel.tslBusRoutes.length > 0 && (
+              <Section title="TSL Bus Route">
+                {parcel.tslBusRoutes.map((route, i) => (
+                  <div key={i} className="text-sm text-zinc-900">{route}</div>
+                ))}
+              </Section>
+            )}
+
+            {parcel.tifDistrict && (
+              <Section title="Tax Increment Financing (TIF)">
+                <Field label="Name" value={parcel.tifDistrict} />
+                {parcel.tifExpiration && <Field label="Expiration" value={parcel.tifExpiration} />}
+              </Section>
+            )}
 
             {parcel.ward && (
               <Section title="Ward">
@@ -109,12 +151,16 @@ export default function ParcelPanel({ parcel, loading, error, onClose }: ParcelP
               </Section>
             )}
 
-            {parcel.tifDistrict && (
-              <Section title="TIF District">
-                <Field label="Name" value={parcel.tifDistrict} />
-                {parcel.tifExpiration && <Field label="Expiration" value={parcel.tifExpiration} />}
+            {parcel.communityArea && (
+              <Section title="Community Area">
+                <Field label="Area" value={parcel.communityArea} />
               </Section>
             )}
+
+            <Section title="Location">
+              <Field label="Township" value={parcel.township} />
+              <Field label="Neighborhood" value={parcel.neighborhood} />
+            </Section>
 
             <Section title="Valuation">
               <Field label="Assessed Value" value={formatCurrency(parcel.assessedValue)} />

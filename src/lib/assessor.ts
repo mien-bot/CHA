@@ -168,7 +168,10 @@ function mapAttributes(attrs: Record<string, unknown>, geometry?: { rings?: numb
     planningRegion: "",
     aro: "",
     zoningMapIndex: "",
+    waterRecordBooks: "",
     tifDistrict: "",
     tifExpiration: "",
+    tslBusRoutes: [],
+    eightyAcrePage: "",
   };
 }

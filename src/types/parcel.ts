@@ -27,8 +27,11 @@ export interface ParcelDetail {
   planningRegion: string;
   aro: string;
   zoningMapIndex: string;
+  waterRecordBooks: string;
   tifDistrict: string;
   tifExpiration: string;
+  tslBusRoutes: string[];
+  eightyAcrePage: string;
 }
 
 export interface SearchResult {
