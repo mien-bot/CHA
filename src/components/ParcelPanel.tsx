@@ -141,6 +141,14 @@ export default function ParcelPanel({ parcel, loading, error, onClose }: ParcelP
                 <Field label="Zone" value={parcel.aduZone} />
                 {parcel.aduArea && <Field label="ADU Area" value={parcel.aduArea} />}
                 {parcel.aduText && <Field label="Restrictions" value={parcel.aduText} />}
+                <a
+                  href="https://chicago.maps.arcgis.com/apps/instant/lookup/index.html?appid=9499e0bd623e42cda4e3af6b8382e866"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 inline-block"
+                >
+                  View Chicago ADU Ordinance Map
+                </a>
               </Section>
             )}
 

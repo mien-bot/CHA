@@ -32,6 +32,7 @@ export default function LayerToggle({ layers, onToggle }: LayerToggleProps) {
   const activeCount = layers.filter((l) => l.active).length;
   const zoningActive = layers.find((l) => l.id === "zoning")?.active ?? false;
   const floodActive = layers.find((l) => l.id === "flood")?.active ?? false;
+  const aduActive = layers.find((l) => l.id === "adu")?.active ?? false;
 
   return (
     <div ref={ref} className="relative">
@@ -96,6 +97,33 @@ export default function LayerToggle({ layers, onToggle }: LayerToggleProps) {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+              {/* Inline ADU legend */}
+              {layer.id === "adu" && aduActive && (
+                <div className="px-4 pb-2 pt-0.5 ml-7 border-b border-zinc-100">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm border border-zinc-300 shrink-0" style={{ backgroundColor: "#059669" }} />
+                      <span className="text-[11px] text-zinc-500">No Limitations</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm border border-zinc-300 shrink-0" style={{ backgroundColor: "#2563eb" }} />
+                      <span className="text-[11px] text-zinc-500">Annual + Occupancy Limits</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm border border-zinc-300 shrink-0" style={{ backgroundColor: "#9333ea" }} />
+                      <span className="text-[11px] text-zinc-500">Limits + Admin Adjustment</span>
+                    </div>
+                  </div>
+                  <a
+                    href="https://chicago.maps.arcgis.com/apps/instant/lookup/index.html?appid=9499e0bd623e42cda4e3af6b8382e866"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-blue-600 hover:text-blue-800 underline mt-1 inline-block"
+                  >
+                    Chicago ADU Ordinance Map
+                  </a>
                 </div>
               )}
               {/* Inline flood legend */}
