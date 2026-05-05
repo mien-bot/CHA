@@ -441,13 +441,18 @@ export default function MapView() {
       <ZoomHint mapRef={mapRef} />
 
       {/* HYLO logo */}
-      <div className="absolute top-3 right-3 z-10 pointer-events-none">
+      <a
+        href="https://hylo.work"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute top-3 right-3 z-10"
+      >
         <img
           src="/hylo-logo.png"
           alt="HYLO"
-          className="h-8 sm:h-10 opacity-80"
+          className="h-8 sm:h-10 opacity-80 hover:opacity-100 transition-opacity"
         />
-      </div>
+      </a>
 
       {/* Bottom controls */}
       <div className="absolute bottom-16 left-3 z-10 flex flex-col gap-2">
