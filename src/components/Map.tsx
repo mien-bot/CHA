@@ -32,6 +32,17 @@ export default function MapView() {
     { id: "satellite", label: "Satellite", active: false },
   ]);
 
+  const fetchOverlays = useCallback(async (lng: number, lat: number) => {
+    try {
+      const res = await fetch(`/api/parcel/overlays?lng=${lng}&lat=${lat}`);
+      if (!res.ok) return;
+      const overlays = await res.json();
+      setSelectedParcel((prev) => prev ? { ...prev, ...overlays } : prev);
+    } catch {
+      // overlays are non-critical, ignore failures
+    }
+  }, []);
+
   const fetchParcelByLocation = useCallback(
     async (lng: number, lat: number) => {
       setPanelOpen(true);
@@ -44,13 +55,15 @@ export default function MapView() {
         if (!res.ok) throw new Error("No parcel found at this location");
         const data: ParcelDetail = await res.json();
         setSelectedParcel(data);
+        setPanelLoading(false);
+        // Fetch overlay data (zoning, ward, TIF, etc.) in background
+        fetchOverlays(lng, lat);
       } catch (err) {
         setPanelError(err instanceof Error ? err.message : "Failed to load parcel data");
-      } finally {
         setPanelLoading(false);
       }
     },
-    []
+    [fetchOverlays]
   );
 
   const fetchParcel = useCallback(async (pin: string) => {
@@ -64,12 +77,19 @@ export default function MapView() {
       if (!res.ok) throw new Error("Parcel not found");
       const data: ParcelDetail = await res.json();
       setSelectedParcel(data);
+      setPanelLoading(false);
+      // If we have geometry, use its centroid for overlays
+      if (data.geometry?.[0]?.length) {
+        const ring = data.geometry[0];
+        const lng = ring.reduce((s, p) => s + p[0], 0) / ring.length;
+        const lat = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+        fetchOverlays(lng, lat);
+      }
     } catch (err) {
       setPanelError(err instanceof Error ? err.message : "Failed to load parcel data");
-    } finally {
       setPanelLoading(false);
     }
-  }, []);
+  }, [fetchOverlays]);
 
   const handleLayerToggle = useCallback((id: string) => {
     setLayerState((prev) =>
