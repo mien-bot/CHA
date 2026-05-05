@@ -33,14 +33,21 @@ export default function MapView() {
   ]);
 
   const fetchOverlays = useCallback(async (lng: number, lat: number) => {
-    try {
-      const res = await fetch(`/api/parcel/overlays?lng=${lng}&lat=${lat}`);
-      if (!res.ok) return;
-      const overlays = await res.json();
-      setSelectedParcel((prev) => prev ? { ...prev, ...overlays } : prev);
-    } catch {
-      // overlays are non-critical, ignore failures
-    }
+    // Fast overlays (~250ms): zoning, ward, community area, TIF, etc.
+    fetch(`/api/parcel/overlays?lng=${lng}&lat=${lat}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((overlays) => {
+        if (overlays) setSelectedParcel((prev) => prev ? { ...prev, ...overlays } : prev);
+      })
+      .catch(() => {});
+
+    // Slow overlay (~2.5s): 80 Acre Page — fetched separately so it doesn't block
+    fetch(`/api/parcel/eighty-acre?lng=${lng}&lat=${lat}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.eightyAcrePage) setSelectedParcel((prev) => prev ? { ...prev, ...data } : prev);
+      })
+      .catch(() => {});
   }, []);
 
   const fetchParcelByLocation = useCallback(
