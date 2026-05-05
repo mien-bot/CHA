@@ -631,12 +631,12 @@ export default function MapView() {
       {/* Zoom hint */}
       <ZoomHint mapRef={mapRef} />
 
-      {/* HYLO logo */}
+      {/* HYLO logo — positioned below top bar */}
       <a
         href="https://hylo.work"
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute top-3 right-3 z-10"
+        className="absolute top-14 sm:top-16 right-3 z-10"
       >
         <img
           src="/hylo-logo.png"
