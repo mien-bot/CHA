@@ -14,7 +14,7 @@ const INITIAL_ZOOM = 11;
 // Proxied through our API routes to avoid CORS issues
 const PARCEL_TILES_URL = "/api/tiles/parcels/{z}/{y}/{x}";
 const ZONING_EXPORT_URL = "/api/tiles/zoning?v=3&bbox={bbox-epsg-3857}";
-const WARDS_EXPORT_URL = "/api/tiles/wards?bbox={bbox-epsg-3857}";
+const WARDS_GEOJSON_URL = "/api/tiles/wards-geojson";
 
 export default function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -253,22 +253,76 @@ export default function MapView() {
         paint: { "raster-opacity": 0.55 },
       });
 
-      // Ward boundaries — Chicago 311 service
+      // Ward boundaries — vector GeoJSON for clear borders + labels
       map.addSource("wards", {
-        type: "raster",
-        tiles: [WARDS_EXPORT_URL],
-        tileSize: 512,
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
         attribution: '<a href="https://gisapps.chicago.gov">City of Chicago</a>',
       });
 
       map.addLayer({
         id: "wards-fill",
-        type: "raster",
+        type: "fill",
         source: "wards",
-        minzoom: 9,
         layout: { visibility: "none" },
-        paint: { "raster-opacity": 0.6 },
+        paint: {
+          "fill-color": "#6366f1",
+          "fill-opacity": 0.08,
+        },
       });
+
+      map.addLayer({
+        id: "wards-outline",
+        type: "line",
+        source: "wards",
+        layout: { visibility: "none" },
+        paint: {
+          "line-color": "#4338ca",
+          "line-width": [
+            "interpolate", ["linear"], ["zoom"],
+            9, 1.5,
+            13, 3,
+            16, 4,
+          ],
+          "line-opacity": 0.8,
+        },
+      });
+
+      map.addLayer({
+        id: "wards-label",
+        type: "symbol",
+        source: "wards",
+        layout: {
+          visibility: "none",
+          "text-field": ["concat", "Ward ", ["get", "WARD"]],
+          "text-size": [
+            "interpolate", ["linear"], ["zoom"],
+            9, 10,
+            12, 14,
+            15, 18,
+          ],
+          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+          "symbol-placement": "point",
+        },
+        paint: {
+          "text-color": "#312e81",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2,
+        },
+      });
+
+      // Load ward GeoJSON data
+      fetch(WARDS_GEOJSON_URL)
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (data) {
+            const source = map.getSource("wards") as maplibregl.GeoJSONSource | undefined;
+            source?.setData(data);
+          }
+        })
+        .catch(() => {});
 
       // Parcel outlines — Cook County GIS dynamic export
       map.addSource("parcels", {
@@ -357,6 +411,8 @@ export default function MapView() {
         map.setLayoutProperty("parcels-raster", "visibility", parcelActive ? "visible" : "none");
         map.setLayoutProperty("zoning-fill", "visibility", zoningActive ? "visible" : "none");
         map.setLayoutProperty("wards-fill", "visibility", wardsActive ? "visible" : "none");
+        map.setLayoutProperty("wards-outline", "visibility", wardsActive ? "visible" : "none");
+        map.setLayoutProperty("wards-label", "visibility", wardsActive ? "visible" : "none");
         map.setLayoutProperty("flood-zones-fill", "visibility", floodActive ? "visible" : "none");
         map.setLayoutProperty("flood-zones-outline", "visibility", floodActive ? "visible" : "none");
         map.setLayoutProperty("flood-zones-label", "visibility", floodActive ? "visible" : "none");
