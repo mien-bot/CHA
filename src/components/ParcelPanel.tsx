@@ -136,6 +136,14 @@ export default function ParcelPanel({ parcel, loading, error, onClose }: ParcelP
               </Section>
             )}
 
+            {parcel.aduZone && (
+              <Section title="ADU (Accessory Dwelling Unit)">
+                <Field label="Zone" value={parcel.aduZone} />
+                {parcel.aduArea && <Field label="ADU Area" value={parcel.aduArea} />}
+                {parcel.aduText && <Field label="Restrictions" value={parcel.aduText} />}
+              </Section>
+            )}
+
             {parcel.tifDistrict && (
               <Section title="Tax Increment Financing (TIF)">
                 <Field label="Name" value={parcel.tifDistrict} />

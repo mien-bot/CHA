@@ -15,6 +15,7 @@ const INITIAL_ZOOM = 11;
 const PARCEL_TILES_URL = "/api/tiles/parcels/{z}/{y}/{x}";
 const ZONING_EXPORT_URL = "/api/tiles/zoning?v=3&bbox={bbox-epsg-3857}";
 const WARDS_GEOJSON_URL = "/api/tiles/wards-geojson";
+const ADU_GEOJSON_URL = "/api/tiles/adu-geojson";
 
 export default function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,6 +29,7 @@ export default function MapView() {
     { id: "parcels", label: "Parcels", active: true },
     { id: "zoning", label: "Zoning", active: false },
     { id: "wards", label: "Wards", active: false },
+    { id: "adu", label: "ADU Zones", active: false },
     { id: "flood", label: "Flood Plain (FEMA)", active: false },
     { id: "satellite", label: "Satellite", active: false },
   ]);
@@ -331,6 +333,97 @@ export default function MapView() {
         })
         .catch(() => {});
 
+      // ADU Zones — vector GeoJSON (10 zones covering Chicago)
+      map.addSource("adu", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+
+      map.addLayer({
+        id: "adu-fill",
+        type: "fill",
+        source: "adu",
+        layout: { visibility: "none" },
+        paint: {
+          "fill-color": [
+            "match",
+            ["get", "ZONE"],
+            "Zone 1", "#059669",
+            "Zone 2", "#0d9488",
+            "Zone 3", "#0891b2",
+            "Zone 4", "#0284c7",
+            "Zone 5", "#2563eb",
+            "Zone 6", "#4f46e5",
+            "Zone 7", "#7c3aed",
+            "Zone 8", "#9333ea",
+            "Zone 9", "#c026d3",
+            "Zone 10", "#db2777",
+            "#10b981",
+          ],
+          "fill-opacity": 0.2,
+        },
+      });
+
+      map.addLayer({
+        id: "adu-outline",
+        type: "line",
+        source: "adu",
+        layout: { visibility: "none" },
+        paint: {
+          "line-color": [
+            "match",
+            ["get", "ZONE"],
+            "Zone 1", "#059669",
+            "Zone 2", "#0d9488",
+            "Zone 3", "#0891b2",
+            "Zone 4", "#0284c7",
+            "Zone 5", "#2563eb",
+            "Zone 6", "#4f46e5",
+            "Zone 7", "#7c3aed",
+            "Zone 8", "#9333ea",
+            "Zone 9", "#c026d3",
+            "Zone 10", "#db2777",
+            "#10b981",
+          ],
+          "line-width": 2.5,
+          "line-opacity": 0.8,
+        },
+      });
+
+      map.addLayer({
+        id: "adu-label",
+        type: "symbol",
+        source: "adu",
+        layout: {
+          visibility: "none",
+          "text-field": ["get", "ZONE"],
+          "text-size": [
+            "interpolate", ["linear"], ["zoom"],
+            9, 10,
+            13, 16,
+          ],
+          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+          "text-allow-overlap": false,
+          "symbol-placement": "point",
+        },
+        paint: {
+          "text-color": "#065f46",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 2,
+        },
+      });
+
+      // Load ADU GeoJSON data
+      fetch(ADU_GEOJSON_URL)
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (data) {
+            const source = map.getSource("adu") as maplibregl.GeoJSONSource | undefined;
+            source?.setData(data);
+          }
+        })
+        .catch(() => {});
+
       // Parcel outlines — Cook County GIS dynamic export
       map.addSource("parcels", {
         type: "raster",
@@ -420,6 +513,10 @@ export default function MapView() {
         map.setLayoutProperty("wards-fill", "visibility", wardsActive ? "visible" : "none");
         map.setLayoutProperty("wards-outline", "visibility", wardsActive ? "visible" : "none");
         map.setLayoutProperty("wards-label", "visibility", wardsActive ? "visible" : "none");
+        const aduActive = layerState.find((l) => l.id === "adu")?.active;
+        map.setLayoutProperty("adu-fill", "visibility", aduActive ? "visible" : "none");
+        map.setLayoutProperty("adu-outline", "visibility", aduActive ? "visible" : "none");
+        map.setLayoutProperty("adu-label", "visibility", aduActive ? "visible" : "none");
         map.setLayoutProperty("flood-zones-fill", "visibility", floodActive ? "visible" : "none");
         map.setLayoutProperty("flood-zones-outline", "visibility", floodActive ? "visible" : "none");
         map.setLayoutProperty("flood-zones-label", "visibility", floodActive ? "visible" : "none");

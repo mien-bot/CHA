@@ -173,5 +173,8 @@ function mapAttributes(attrs: Record<string, unknown>, geometry?: { rings?: numb
     tifExpiration: "",
     tslBusRoutes: [],
     eightyAcrePage: "",
+    aduZone: "",
+    aduArea: "",
+    aduText: "",
   };
 }

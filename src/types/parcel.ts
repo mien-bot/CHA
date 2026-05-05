@@ -32,6 +32,9 @@ export interface ParcelDetail {
   tifExpiration: string;
   tslBusRoutes: string[];
   eightyAcrePage: string;
+  aduZone: string;
+  aduArea: string;
+  aduText: string;
 }
 
 export interface SearchResult {

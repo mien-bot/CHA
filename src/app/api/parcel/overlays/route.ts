@@ -9,6 +9,7 @@ const ARO_API = "https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Z
 const ZONING_MAP_INDEX_API = "https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/22/query";
 const TIF_API = "https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/dpd/MapServer/13/query";
 const TSL_BUS_ROUTE_API = "https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/14/query";
+const ADU_API = "https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/17/query";
 // 80 Acre Page moved to separate endpoint — IndexGrid is slow (~2.5s)
 
 async function queryPoint(url: string, lng: number, lat: number, outFields: string) {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing lng/lat" }, { status: 400 });
   }
 
-  const [zoning, ward, comArea, planRegion, aro, mapIndex, tif, tslRoutes] = await Promise.all([
+  const [zoning, ward, comArea, planRegion, aro, mapIndex, tif, tslRoutes, adu] = await Promise.all([
     queryPoint(ZONING_API, lng, lat, "ZONE_CLASS,ZONE_TYPE"),
     queryPoint(WARD_API, lng, lat, "WARD,ALDERMAN,WARD_PHONE"),
     queryPoint(COMAREA_API, lng, lat, "COMMUNITY,AREA_NUMBER"),
@@ -45,6 +46,7 @@ export async function GET(request: NextRequest) {
     queryPoint(ZONING_MAP_INDEX_API, lng, lat, "ZONE_MAP,PAGE_NUMBER,GRID,BOOKS"),
     queryPoint(TIF_API, lng, lat, "NAME,REF,EXPIRATION_DATE,TYPE"),
     queryPoint(TSL_BUS_ROUTE_API, lng, lat, "STREET_NAM,SEGMENT_FR,SEGMENT_TO,SERVED_BY_"),
+    queryPoint(ADU_API, lng, lat, "ADU_AREA,ZONE,TEXT"),
   ]);
 
   const result: Record<string, unknown> = {};
@@ -74,6 +76,12 @@ export async function GET(request: NextRequest) {
       const a = f.attributes;
       return `On ${a.STREET_NAM} from ${a.SEGMENT_FR} to ${a.SEGMENT_TO}`;
     });
+  }
+  if (adu?.[0]) {
+    const a = adu[0].attributes;
+    result.aduZone = a.ZONE || "";
+    result.aduArea = a.ADU_AREA || "";
+    result.aduText = a.TEXT || "";
   }
   return NextResponse.json(result, {
     headers: {
