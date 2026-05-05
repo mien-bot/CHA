@@ -131,9 +131,16 @@ function parseFormattedNumber(val: unknown): number | null {
   return isNaN(num) ? null : num;
 }
 
+function getAssessmentRatio(propertyClass: unknown): number {
+  const classCode = String(propertyClass ?? "").trim();
+  return classCode.startsWith("5") ? 0.25 : 0.1;
+}
+
 function mapAttributes(attrs: Record<string, unknown>, geometry?: { rings?: number[][][] }): ParcelDetail {
   const assessedTotal = parseFormattedNumber(attrs.CURRENTVALUE_TOTAL);
-  const marketValue = assessedTotal ? assessedTotal * 10 : null;
+  const marketValue = assessedTotal
+    ? assessedTotal / getAssessmentRatio(attrs.BCLASS)
+    : null;
 
   const bldgAge = parseFormattedNumber(attrs.BLDGAGE);
   const yearBuilt = bldgAge ? new Date().getFullYear() - bldgAge : null;
