@@ -13,7 +13,7 @@ const INITIAL_ZOOM = 11;
 
 // Proxied through our API routes to avoid CORS issues
 const PARCEL_TILES_URL = "/api/tiles/parcels/{z}/{y}/{x}";
-const ZONING_EXPORT_URL = "/api/tiles/zoning?bbox={bbox-epsg-3857}";
+const ZONING_EXPORT_URL = "/api/tiles/zoning?v=2&bbox={bbox-epsg-3857}";
 const WARDS_EXPORT_URL = "/api/tiles/wards?bbox={bbox-epsg-3857}";
 
 export default function MapView() {
@@ -220,7 +220,7 @@ export default function MapView() {
       map.addSource("zoning", {
         type: "raster",
         tiles: [ZONING_EXPORT_URL],
-        tileSize: 512,
+        tileSize: 256,
         attribution: '<a href="https://gisapps.chicago.gov">City of Chicago GIS</a>',
       });
 
@@ -228,7 +228,7 @@ export default function MapView() {
         id: "zoning-fill",
         type: "raster",
         source: "zoning",
-        minzoom: 11,
+        minzoom: 12,
         layout: { visibility: "none" },
         paint: { "raster-opacity": 0.55 },
       });
@@ -450,7 +450,7 @@ export default function MapView() {
         <img
           src="/hylo-logo.png"
           alt="HYLO"
-          className="h-8 sm:h-10 opacity-80 hover:opacity-100 transition-opacity"
+          className="h-12 sm:h-16 opacity-80 hover:opacity-100 transition-opacity"
         />
       </a>
 

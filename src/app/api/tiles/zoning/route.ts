@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     `https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/export?` +
     `dpi=96&transparent=true&format=png32&` +
     `layers=show:2,9,10,15&` +
-    `bbox=${bbox}&bboxSR=3857&imageSR=3857&size=512,512&f=image`;
+    `bbox=${bbox}&bboxSR=3857&imageSR=3857&size=256,256&f=image`;
 
   const res = await fetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   return new NextResponse(buffer, {
     headers: {
       "Content-Type": "image/png",
-      "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
+      "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=3600",
       "Access-Control-Allow-Origin": "*",
     },
   });
