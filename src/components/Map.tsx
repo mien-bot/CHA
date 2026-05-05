@@ -13,6 +13,7 @@ const INITIAL_ZOOM = 11;
 // Proxied through our API routes to avoid CORS issues
 const PARCEL_TILES_URL = "/api/tiles/parcels/{z}/{y}/{x}";
 const ZONING_EXPORT_URL = "/api/tiles/zoning?bbox={bbox-epsg-3857}";
+const WARDS_EXPORT_URL = "/api/tiles/wards?bbox={bbox-epsg-3857}";
 
 export default function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -25,6 +26,7 @@ export default function MapView() {
   const [layerState, setLayerState] = useState([
     { id: "parcels", label: "Parcels", active: true },
     { id: "zoning", label: "Zoning", active: false },
+    { id: "wards", label: "Wards", active: false },
     { id: "flood", label: "Flood Plain (FEMA)", active: false },
     { id: "satellite", label: "Satellite", active: false },
   ]);
@@ -230,6 +232,23 @@ export default function MapView() {
         paint: { "raster-opacity": 0.55 },
       });
 
+      // Ward boundaries — Chicago 311 service
+      map.addSource("wards", {
+        type: "raster",
+        tiles: [WARDS_EXPORT_URL],
+        tileSize: 256,
+        attribution: '<a href="https://gisapps.chicago.gov">City of Chicago</a>',
+      });
+
+      map.addLayer({
+        id: "wards-fill",
+        type: "raster",
+        source: "wards",
+        minzoom: 9,
+        layout: { visibility: "none" },
+        paint: { "raster-opacity": 0.6 },
+      });
+
       // Parcel outlines — Cook County GIS cached tiles
       map.addSource("parcels", {
         type: "raster",
@@ -311,10 +330,12 @@ export default function MapView() {
       try {
         const parcelActive = layerState.find((l) => l.id === "parcels")?.active;
         const zoningActive = layerState.find((l) => l.id === "zoning")?.active;
+        const wardsActive = layerState.find((l) => l.id === "wards")?.active;
         const floodActive = layerState.find((l) => l.id === "flood")?.active;
         const satelliteActive = layerState.find((l) => l.id === "satellite")?.active;
         map.setLayoutProperty("parcels-raster", "visibility", parcelActive ? "visible" : "none");
         map.setLayoutProperty("zoning-fill", "visibility", zoningActive ? "visible" : "none");
+        map.setLayoutProperty("wards-fill", "visibility", wardsActive ? "visible" : "none");
         map.setLayoutProperty("flood-zones-fill", "visibility", floodActive ? "visible" : "none");
         map.setLayoutProperty("flood-zones-outline", "visibility", floodActive ? "visible" : "none");
         map.setLayoutProperty("flood-zones-label", "visibility", floodActive ? "visible" : "none");

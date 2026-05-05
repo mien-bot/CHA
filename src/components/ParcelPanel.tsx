@@ -82,17 +82,25 @@ export default function ParcelPanel({ parcel, loading, error, onClose }: ParcelP
 
         {parcel && !loading && (
           <div className="divide-y divide-zinc-100">
-            <Section title="Classification">
-              <Field label="Property Class" value={parcel.propertyClass} />
-              <Field label="Township" value={parcel.township} />
-              <Field label="Neighborhood" value={parcel.neighborhood} />
+            <Section title="Zoning & Classification">
               {parcel.zoning && (
                 <Field
                   label="Zoning"
                   value={`${parcel.zoning} (${getZoningCategory(parcel.zoning)})`}
                 />
               )}
+              <Field label="Property Class" value={parcel.propertyClass} />
+              <Field label="Township" value={parcel.township} />
+              <Field label="Neighborhood" value={parcel.neighborhood} />
             </Section>
+
+            {parcel.ward && (
+              <Section title="Ward">
+                <Field label="Ward" value={parcel.ward} />
+                <Field label="Alderman" value={parcel.alderman} />
+                {parcel.wardPhone && <Field label="Phone" value={parcel.wardPhone} />}
+              </Section>
+            )}
 
             <Section title="Valuation">
               <Field label="Assessed Value" value={formatCurrency(parcel.assessedValue)} />
@@ -119,7 +127,7 @@ export default function ParcelPanel({ parcel, loading, error, onClose }: ParcelP
       {/* Footer */}
       {parcel && (
         <div className="px-4 py-2 bg-zinc-50 border-t border-zinc-200 text-xs text-zinc-500 shrink-0">
-          Data from Cook County Assessor
+          Data from Cook County Assessor &amp; City of Chicago
         </div>
       )}
     </div>

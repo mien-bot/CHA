@@ -8,11 +8,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing bbox" }, { status: 400 });
   }
 
-  // City of Chicago Zoning MapServer — must specify layers to render
+  // Chicago 311 service — Ward boundaries (layer 21)
   const url =
-    `https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/export?` +
+    `https://gisapps.chicago.gov/arcgis/rest/services/311/311_layers/MapServer/export?` +
     `dpi=96&transparent=true&format=png32&` +
-    `layers=show:1,2,5,6,9,15&` +
+    `layers=show:21&` +
     `bbox=${bbox}&bboxSR=3857&imageSR=3857&size=256,256&f=image`;
 
   const res = await fetch(url, { next: { revalidate: 86400 } });

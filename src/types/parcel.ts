@@ -6,6 +6,10 @@ export interface ParcelDetail {
   city: string;
   zip: string;
   zoning: string;
+  zoningDescription: string;
+  ward: string;
+  alderman: string;
+  wardPhone: string;
   assessedValue: number | null;
   marketValue: number | null;
   lotSize: number | null;

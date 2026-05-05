@@ -4,6 +4,14 @@ import { ParcelDetail, SearchResult } from "@/types/parcel";
 const PARCELS_API =
   "https://gis.cookcountyil.gov/traditional/rest/services/CookViewer3Parcels/MapServer/0/query";
 
+// City of Chicago Zoning query
+const ZONING_API =
+  "https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/1/query";
+
+// City of Chicago Ward query
+const WARD_API =
+  "https://gisapps.chicago.gov/arcgis/rest/services/311/311_layers/MapServer/21/query";
+
 const OUT_FIELDS = [
   "PIN14",
   "PIN14_dash",
@@ -23,6 +31,48 @@ const OUT_FIELDS = [
   "TAXYR",
   "BLDGAGE",
 ].join(",");
+
+async function fetchZoningAtPoint(lng: number, lat: number) {
+  try {
+    const params = new URLSearchParams({
+      geometry: `${lng},${lat}`,
+      geometryType: "esriGeometryPoint",
+      inSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      outFields: "ZONE_CLASS,ZONE_TYPE",
+      f: "json",
+      returnGeometry: "false",
+    });
+    const res = await fetch(`${ZONING_API}?${params}`, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.features?.length) return null;
+    return data.features[0].attributes as { ZONE_CLASS: string; ZONE_TYPE: number };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchWardAtPoint(lng: number, lat: number) {
+  try {
+    const params = new URLSearchParams({
+      geometry: `${lng},${lat}`,
+      geometryType: "esriGeometryPoint",
+      inSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      outFields: "WARD,ALDERMAN,WARD_PHONE",
+      f: "json",
+      returnGeometry: "false",
+    });
+    const res = await fetch(`${WARD_API}?${params}`, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.features?.length) return null;
+    return data.features[0].attributes as { WARD: string; ALDERMAN: string; WARD_PHONE: string };
+  } catch {
+    return null;
+  }
+}
 
 export async function fetchParcelByPIN(pin: string): Promise<ParcelDetail | null> {
   const cleanPIN = pin.replace(/[^0-9-]/g, "");
@@ -47,15 +97,33 @@ export async function fetchParcelByPIN(pin: string): Promise<ParcelDetail | null
   const data = await res.json();
   if (!data.features || data.features.length === 0) return null;
 
-  return mapAttributes(data.features[0].attributes, data.features[0].geometry);
+  const parcel = mapAttributes(data.features[0].attributes, data.features[0].geometry);
+
+  // Get centroid for zoning/ward lookup
+  const centroid = getCentroid(data.features[0].geometry?.rings);
+  if (centroid) {
+    const [zoning, ward] = await Promise.all([
+      fetchZoningAtPoint(centroid[0], centroid[1]),
+      fetchWardAtPoint(centroid[0], centroid[1]),
+    ]);
+    if (zoning) {
+      parcel.zoning = zoning.ZONE_CLASS || "";
+    }
+    if (ward) {
+      parcel.ward = ward.WARD || "";
+      parcel.alderman = ward.ALDERMAN || "";
+      parcel.wardPhone = ward.WARD_PHONE || "";
+    }
+  }
+
+  return parcel;
 }
 
 export async function fetchParcelByLocation(
   lng: number,
   lat: number
 ): Promise<ParcelDetail | null> {
-  // Use envelope geometry (small bbox around the point) — works reliably with this service
-  const buffer = 0.0001; // ~10m
+  const buffer = 0.0001;
   const geometry = JSON.stringify({
     xmin: lng - buffer,
     ymin: lat - buffer,
@@ -75,22 +143,35 @@ export async function fetchParcelByLocation(
     resultRecordCount: "1",
   });
 
-  const res = await fetch(`${PARCELS_API}?${params}`, {
-    next: { revalidate: 86400 },
-  });
+  // Fetch parcel, zoning, and ward in parallel
+  const [parcelRes, zoning, ward] = await Promise.all([
+    fetch(`${PARCELS_API}?${params}`, { next: { revalidate: 86400 } }),
+    fetchZoningAtPoint(lng, lat),
+    fetchWardAtPoint(lng, lat),
+  ]);
 
-  if (!res.ok) return null;
+  if (!parcelRes.ok) return null;
 
-  const data = await res.json();
+  const data = await parcelRes.json();
   if (!data.features || data.features.length === 0) return null;
 
-  return mapAttributes(data.features[0].attributes, data.features[0].geometry);
+  const parcel = mapAttributes(data.features[0].attributes, data.features[0].geometry);
+
+  if (zoning) {
+    parcel.zoning = zoning.ZONE_CLASS || "";
+  }
+  if (ward) {
+    parcel.ward = ward.WARD || "";
+    parcel.alderman = ward.ALDERMAN || "";
+    parcel.wardPhone = ward.WARD_PHONE || "";
+  }
+
+  return parcel;
 }
 
 export async function searchParcels(query: string): Promise<SearchResult[]> {
   const clean = query.replace(/'/g, "''").trim().toUpperCase();
 
-  // Build WHERE clause: try PIN, address
   const conditions = [
     `street_address LIKE '%${clean}%'`,
     `PIN14 LIKE '%${clean.replace(/-/g, "")}%'`,
@@ -136,12 +217,21 @@ function parseFormattedNumber(val: unknown): number | null {
   return isNaN(num) ? null : num;
 }
 
+function getCentroid(rings?: number[][][]): [number, number] | null {
+  if (!rings || !rings[0] || rings[0].length === 0) return null;
+  const ring = rings[0];
+  let sumX = 0, sumY = 0;
+  for (const [x, y] of ring) {
+    sumX += x;
+    sumY += y;
+  }
+  return [sumX / ring.length, sumY / ring.length];
+}
+
 function mapAttributes(attrs: Record<string, unknown>, geometry?: { rings?: number[][][] }): ParcelDetail {
   const assessedTotal = parseFormattedNumber(attrs.CURRENTVALUE_TOTAL);
-  // Cook County assessment ratio is ~10% for most residential
   const marketValue = assessedTotal ? assessedTotal * 10 : null;
 
-  // Compute year built from building age
   const bldgAge = parseFormattedNumber(attrs.BLDGAGE);
   const yearBuilt = bldgAge ? new Date().getFullYear() - bldgAge : null;
 
@@ -153,6 +243,10 @@ function mapAttributes(attrs: Record<string, unknown>, geometry?: { rings?: numb
     city: (attrs.CITYNAME as string) || "",
     zip: (attrs.ZIP1 as string) || "",
     zoning: "",
+    zoningDescription: "",
+    ward: "",
+    alderman: "",
+    wardPhone: "",
     assessedValue: assessedTotal,
     marketValue,
     lotSize: parseFormattedNumber(attrs.LANDSF),
