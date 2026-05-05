@@ -46,9 +46,10 @@ body {
   display: none;
 }
 
-/* Navigation control positioning */
+/* Navigation control positioning — flush to bottom */
 .maplibregl-ctrl-bottom-right {
-  bottom: 70px;
+  bottom: 4px;
+  right: 4px;
 }
 
 /* Larger touch targets on mobile */
@@ -59,7 +60,7 @@ body {
   }
 
   .maplibregl-ctrl-bottom-right {
-    bottom: 80px;
-    right: 8px;
+    bottom: 4px;
+    right: 4px;
   }
 }

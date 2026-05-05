@@ -631,12 +631,12 @@ export default function MapView() {
       {/* Zoom hint */}
       <ZoomHint mapRef={mapRef} />
 
-      {/* HYLO logo */}
+      {/* HYLO logo — aligned with top bar */}
       <a
         href="https://hylo.work"
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute top-3 right-3 z-10"
+        className="absolute top-2 sm:top-3 right-2 sm:right-3 z-10"
       >
         <img
           src="/hylo-logo.png"
@@ -646,7 +646,7 @@ export default function MapView() {
       </a>
 
       {/* Bottom controls */}
-      <div className="absolute bottom-6 left-3 z-10 flex flex-col gap-2">
+      <div className="absolute bottom-1 left-1 z-10 flex flex-col gap-2">
         <MeasureTool mapRef={mapRef} />
         <LayerToggle layers={layerState} onToggle={handleLayerToggle} />
       </div>
