@@ -34,7 +34,7 @@ export async function GET(
   const url =
     `https://gis.cookcountyil.gov/traditional/rest/services/CookViewer3Parcels/MapServer/export?` +
     `dpi=96&transparent=true&format=png32&` +
-    `bbox=${bbox}&bboxSR=3857&imageSR=3857&size=256,256&f=image`;
+    `bbox=${bbox}&bboxSR=3857&imageSR=3857&size=512,512&f=image`;
 
   const res = await fetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) {

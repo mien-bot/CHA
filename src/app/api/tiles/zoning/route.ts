@@ -8,12 +8,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing bbox" }, { status: 400 });
   }
 
-  // City of Chicago Zoning MapServer — must specify layers to render
+  // City of Chicago Zoning MapServer — layer 15 is the main zoning fill
   const url =
     `https://gisapps.chicago.gov/arcgis/rest/services/ExternalApps/Zoning/MapServer/export?` +
     `dpi=96&transparent=true&format=png32&` +
-    `layers=show:1,2,5,6,9,15&` +
-    `bbox=${bbox}&bboxSR=3857&imageSR=3857&size=256,256&f=image`;
+    `layers=show:15&` +
+    `bbox=${bbox}&bboxSR=3857&imageSR=3857&size=512,512&f=image`;
 
   const res = await fetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) {

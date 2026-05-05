@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     `https://gisapps.chicago.gov/arcgis/rest/services/311/311_layers/MapServer/export?` +
     `dpi=96&transparent=true&format=png32&` +
     `layers=show:21&` +
-    `bbox=${bbox}&bboxSR=3857&imageSR=3857&size=256,256&f=image`;
+    `bbox=${bbox}&bboxSR=3857&imageSR=3857&size=512,512&f=image`;
 
   const res = await fetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) {

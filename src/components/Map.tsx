@@ -219,7 +219,7 @@ export default function MapView() {
       map.addSource("zoning", {
         type: "raster",
         tiles: [ZONING_EXPORT_URL],
-        tileSize: 256,
+        tileSize: 512,
         attribution: '<a href="https://gisapps.chicago.gov">City of Chicago GIS</a>',
       });
 
@@ -227,7 +227,7 @@ export default function MapView() {
         id: "zoning-fill",
         type: "raster",
         source: "zoning",
-        minzoom: 10,
+        minzoom: 11,
         layout: { visibility: "none" },
         paint: { "raster-opacity": 0.55 },
       });
@@ -236,7 +236,7 @@ export default function MapView() {
       map.addSource("wards", {
         type: "raster",
         tiles: [WARDS_EXPORT_URL],
-        tileSize: 256,
+        tileSize: 512,
         attribution: '<a href="https://gisapps.chicago.gov">City of Chicago</a>',
       });
 
@@ -249,13 +249,13 @@ export default function MapView() {
         paint: { "raster-opacity": 0.6 },
       });
 
-      // Parcel outlines — Cook County GIS cached tiles
+      // Parcel outlines — Cook County GIS dynamic export
       map.addSource("parcels", {
         type: "raster",
         tiles: [PARCEL_TILES_URL],
-        tileSize: 256,
-        minzoom: 13,
-        maxzoom: 20,
+        tileSize: 512,
+        minzoom: 14,
+        maxzoom: 19,
         attribution:
           '<a href="https://www.cookcountyassessor.com">Cook County Assessor</a>',
       });
@@ -264,7 +264,7 @@ export default function MapView() {
         id: "parcels-raster",
         type: "raster",
         source: "parcels",
-        minzoom: 13,
+        minzoom: 14,
         paint: { "raster-opacity": 0.85 },
       });
 
@@ -296,7 +296,7 @@ export default function MapView() {
 
       // Click anywhere — spatial query to get parcel details + drop pin
       map.on("click", (e) => {
-        if (map.getZoom() >= 13) {
+        if (map.getZoom() >= 14) {
           if (markerRef.current) {
             markerRef.current.remove();
           }
@@ -310,7 +310,7 @@ export default function MapView() {
 
       // Cursor style based on zoom
       map.on("zoomend", () => {
-        map.getCanvas().style.cursor = map.getZoom() >= 13 ? "pointer" : "";
+        map.getCanvas().style.cursor = map.getZoom() >= 14 ? "pointer" : "";
       });
     });
 
